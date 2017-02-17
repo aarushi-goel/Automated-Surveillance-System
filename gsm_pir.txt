@@ -1,0 +1,67 @@
+#include <SoftwareSerial.h>
+SoftwareSerial SIM900(11, 12);
+
+int SensorCheck = 0, SmsCheck = 1;
+int SensorPin = 8;
+
+void setup()
+{
+  SIM900.begin(19200);
+  delay(100);
+  Serial.begin(9600);
+  pinMode(SensorPin, INPUT);
+  pinMode(13, OUTPUT);
+}
+
+void loop()
+{
+  Serial.println("Hardware Activated");
+  RunStatus();
+}
+
+void CheckSensor()
+{
+  if (digitalRead(SensorPin) == HIGH)
+  {
+    SensorCheck = 1;
+    digitalWrite(13, HIGH);
+
+  }
+  else if (digitalRead(SensorPin) == LOW)
+  {
+    SensorCheck = 0;
+    digitalWrite(13, LOW);
+  }
+}
+
+void RunStatus()
+{
+  while (SensorCheck == 0)
+    CheckSensor();
+  if (SensorCheck == 1)
+  {
+    SmsCheck = 0;
+    SendSms();
+    SensorCheck = 0;
+  }
+  delay(15000);
+}
+
+void SendSms()
+{
+  if (SmsCheck == 0)
+  {
+    SIM900.print("AT+CMGF=1\r");                                                        // AT command to send SMS message
+    delay(100);
+    SIM900.println("AT + CMGS = \"+919873717459\"");                                     // recipient's mobile number, in international format
+    delay(100);
+    SIM900.println("Intruder Detected. 160065DF64C8");        // message to send
+    delay(100);
+    SIM900.println((char)26);                       // End AT command with a ^Z, ASCII code 26
+    delay(100);
+    SIM900.println();
+    delay(5000);
+    Serial.println("Message Sent");
+    SmsCheck = 1;
+  }
+}
